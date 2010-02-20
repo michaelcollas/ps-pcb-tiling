@@ -1,98 +1,107 @@
+14 dict /bounding-box-dict exch def
 
-% string -- boolean
-/is-2byte-eol {
-    dup (\r\n) eq exch (\n\r) eq or 
-} def
+bounding-box-dict begin
 
-% string -- boolean
-/is-1byte-eol {
-    dup (\r) anchorsearch dup { exch pop } if exch pop exch
-    (\n) anchorsearch dup { exch pop } if exch pop or
-} def
+    % string -- boolean
+    /is-2byte-eol {
+        dup (\r\n) eq exch (\n\r) eq or 
+    } def
 
-%file --> eol-length true | false
-/is-eol {
-    2 string .peekstring pop
-    dup is-2byte-eol {
-        pop 2 true
-    }{
-        is-1byte-eol
-        dup { 1 exch } if 
-    } ifelse
-} def
+    % string -- boolean
+    /is-1byte-eol {
+        dup (\r) anchorsearch dup { exch pop } if exch pop exch
+        (\n) anchorsearch dup { exch pop } if exch pop or
+    } def
 
-% file count --
-/skip-bytes {
-    string readstring pop pop
-} def
-
-% file --
-/scan-to-line-start {
-    { 
-        dup is-eol { skip-bytes exit } if
-        dup read not { pop exit } if pop  
-    } loop
-} def
-
-% string length -- chopped-string
-/chop {
-    0 exch getinterval
-} def
-
-% string n char -- string n+1
-/add-to-indexed-string {
-    3 copy put pop 1 add
-} def
-
-% file string -- file string eof 
-/read-to-eof-eol-or-eos {
-    0                       
-    {
-        2 index is-eol { pop chop true exit } if
-        2 index read not { chop false exit } if
-        add-to-indexed-string
-        2 copy exch length eq { pop true exit } if
-    } loop
-} def
-
-% file string -- file string boolean
-/readline-limited {
-    read-to-eof-eol-or-eos
-    2 index scan-to-line-start
-} def
-
-% string search-string -- string true | false
-/trailing-text {
-    anchorsearch exch pop
-} def
-
-% string -- [ exec-results ]
-/exec-into-array {
-    [ exch cvx exec ]
-} def
-
-%string -- [x y w h] true | false
-/scan-string-for-bounding-box {
-    (%%BoundingBox: ) trailing-text dup { 
-        exch exec-into-array exch
-    } if
-} def
-
-%file -- [x y w h] true | false
-/read-bounding-box {
-    {
-        40 string readline-limited not { 
-            pop false exit 
-        } { 
-            scan-string-for-bounding-box { exch pop true exit } if
+    %file --> eol-length true | false
+    /is-eol {
+        2 string .peekstring pop
+        dup is-2byte-eol {
+            pop 2 true
+        }{
+            is-1byte-eol
+            dup { 1 exch } if 
         } ifelse
-    } loop
-} def
+    } def
 
-% filename -- [x y w h] true | false
-/file-read-bounding-box {
-  (r) file dup read-bounding-box dup { 3 -1 roll } { exch } ifelse closefile
-} def
+    % file count --
+    /skip-bytes {
+        string readstring pop pop
+    } def
+
+    % file --
+    /scan-to-line-start {
+        { 
+            dup is-eol { skip-bytes exit } if
+            dup read not { pop exit } if pop  
+        } loop
+    } def
+
+    % string length -- chopped-string
+    /chop {
+        0 exch getinterval
+    } def
+
+    % string n char -- string n+1
+    /add-to-indexed-string {
+        3 copy put pop 1 add
+    } def
+
+    % file string -- file string eof 
+    /read-to-eof-eol-or-eos {
+        0                       
+        {
+            2 index is-eol { pop chop true exit } if
+            2 index read not { chop false exit } if
+            add-to-indexed-string
+            2 copy exch length eq { pop true exit } if
+        } loop
+    } def
+
+    % file string -- file string boolean
+    /readline-limited {
+        read-to-eof-eol-or-eos
+        2 index scan-to-line-start
+    } def
+
+    % string search-string -- string true | false
+    /trailing-text {
+        anchorsearch exch pop
+    } def
+
+    % string -- [ exec-results ]
+    /exec-into-array {
+        [ exch cvx exec ]
+    } def
+
+    %string -- [x y w h] true | false
+    /scan-string-for-bounding-box {
+        (%%BoundingBox: ) trailing-text dup { 
+            exch exec-into-array exch
+        } if
+    } def
+
+    %file -- [x y w h] true | false
+    /read-bounding-box {
+        {
+            40 string readline-limited not { 
+                pop false exit 
+            } { 
+                scan-string-for-bounding-box { exch pop true exit } if
+            } ifelse
+        } loop
+    } def
+
+    % filename -- [x y w h] true | false
+    /file-read-bounding-box {
+      (r) file dup read-bounding-box dup { 3 -1 roll } { exch } ifelse closefile
+    } def
+
+end
+
+bounding-box-dict readonly pop
+
+/file-read-bounding-box { bounding-box-dict begin file-read-bounding-box end } def
 
 (temp.cmp.ps) file-read-bounding-box {
     (Found bounding box: ) print ==
