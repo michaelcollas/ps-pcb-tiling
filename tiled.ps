@@ -1,0 +1,45 @@
+%!PS
+/showpage {} def 
+
+/translate-mils {
+    0.072 mul
+    exch
+    0.072 mul
+    exch
+    translate
+} def
+
+% { filenames } x y
+/place-files {
+    /place_state save def
+    translate-mils
+    { run } forall
+    place_state restore
+} def
+
+% x y file-name
+/place-file {
+    1 array astore
+    3 1 roll 
+    place-files
+} def
+
+% x y file-name-base 
+/place-cmp-and-drill {
+    /place_state save def
+    3 1 roll translate-mils
+    dup
+    (.cmp.ps) concatstrings run
+    (.drill.ps) concatstrings run
+    place_state restore
+} def
+
+% y draw_proc x_start increment x_end -- 
+/row { 
+    2 dict begin
+    5 -2 roll    % x_start increment x_end y draw_proc
+    /draw_proc exch dup xcheck not { cvx } if def
+    /y exch def
+    { y draw_proc } for
+    end 
+} def
