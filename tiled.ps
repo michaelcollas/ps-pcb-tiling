@@ -1,6 +1,10 @@
 %!PS
 /showpage {} def 
 
+/page-size {
+    currentdevice getdeviceprops .dicttomark begin PageSize end
+} def
+
 /translate-mils {
     0.072 mul
     exch
