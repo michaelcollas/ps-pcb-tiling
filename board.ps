@@ -1,0 +1,69 @@
+
+% [file names] -- board
+/define-board {
+    << 
+        exch /files exch 
+        /margins [0 0 0 0] 
+        /bounds [0 0 0 0]
+    >>
+} def
+
+% [X0..Xn] [Y0..Yn] i -- [X0..Xn] [Y0..Yn] i Xi Yi
+/double-get {
+    2 copy get
+    3 index 2 index get
+    exch
+} def
+
+% [Dest0..DestN] [Source0..SourceN] i -- [Dest0..DestN] [Source0..SourceN] i
+/copy-element {
+    2 copy get           % [dest] [src] i src
+    3 index 2 index      % [dest] [src] i src [dest] i
+    3 -1 roll            % [dest] [src] i [dest] i src
+    put
+} def
+
+% Modifies array contents to: [Z Zi Z (Zi op Zj)]
+% [Z Zi Z Zj] i j {op} -- 
+/combine-elements {
+    3 index 4 -1 roll get    % [Z Z Z Z] j {op} Zi
+    3 index 3 index get      % [Z Z Z Z] j {op} Zi Zj
+    3 -1 roll exec put
+} def
+
+% [X Y W H] -- [Xmin Ymin Xmax Ymax]
+/bounding-box-to-extents {
+    dup 0 2 {add} combine-elements
+    dup 1 3 {add} combine-elements
+} def
+
+% [Xmin Ymin Xmax Ymax] -- [X Y W H]
+/extents-to-bounding-box {
+    dup 0 2 {exch sub} combine-elements
+    dup 1 3 {exch sub} combine-elements
+} def
+
+% [old] [new] -- [old]
+/expand-extents {
+    0 double-get gt { copy-element } if pop
+    1 double-get gt { copy-element } if pop
+    2 double-get lt { copy-element } if pop
+    3 double-get lt { copy-element } if pop
+} def
+
+% [old] [new] -- [old]
+/expand-bounds {
+    bounding-box-to-extents exch bounding-box-to-extents exch
+    expand-extents
+    pop extents-to-bounding-box
+} def
+
+% board --
+/read-bounds {
+    begin bounds files end    
+    {
+        file-read-bounding-box not { (Unable to read bounding box.) print stop } if 
+        expand-bounds 
+    } forall
+    pop
+} def
